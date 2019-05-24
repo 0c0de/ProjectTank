@@ -14,12 +14,51 @@ Servo turret;
 /* Just a little test message.  Go to http://192.168.4.1 in a web browser
    connected to this access point to see it.
 */
+//Motor A
+//Connect INPUT 1 to pin 1 -> GPIO 5
+//Connect INPUT 2 to pin 2 -> GPIO 4
+
+//Motor B
+//Connect INPUT 3 to pin 3 -> GPIO 0
+//Connect INPUT 4 to pin 4 -> GPIO 2
+//Connect servo to pin 5 -> GPIO 14
 void handleRoot() {
   server.send(200, "text/html", "<h1>You are connected</h1>");
 }
 
 void RotateTurret(int x){
-  
+  turret.write(x);
+}
+
+void MoveTank(String dir){
+  switch (dir)
+  {
+  case "forward":
+    digitalWrite(5, HIGH);
+    digitalWrite(0, HIGH);
+    digitalWrite(4, LOW);
+    digitalWrite(2, LOW);
+    break;
+  case "back":
+    digitalWrite(4, HIGH);
+    digitalWrite(2, HIGH);
+    digitalWrite(0, LOW);
+    digitalWrite(5, LOW);
+    break;
+  case "right":
+    digitalWrite(5, HIGH);
+    digitalWrite(4, HIGH);
+    digitalWrite(0, HIGH);
+    digitalWrite(2, LOW);
+    break;
+  case "left":
+    digitalWrite(2, HIGH);
+    digitalWrite(0, HIGH);
+    digitalWrite(5, HIGH);
+    digitalWrite(4, LOW);
+  default:
+    break;
+  }
 }
 
 double mapf(double val, double in_min, double in_max, double out_min, double out_max) {
@@ -43,27 +82,32 @@ void getTurretValues() {
   Serial.print(" and position in Y is: ");
   Serial.println((double)doc["y"]);
   turret.write((int)mappedXVal);
-  /*StaticJsonDocument<200> resp;
-  resp["ok"] = "Everything went ok";*/
+  StaticJsonDocument<200> resp;
+  resp["ok"] = "Everything went ok";
   server.send(200,"text/plain", "");
 }
 
 void getTankValues() {
-  String message;
-  message = "Arugment number " + server.arg("plain");
-  
+  String message = server.arg("plain");
+  StaticJsonDocument<200> doc;
+  deserializeJson(doc,server message);
+  String direction = doc["dir"];
+  MoveTank(direction);
   Serial.println(message);
   server.send(200, "text/plain","");
 }
 
 void setup() {
   //delay(1000);
+  pinMode(5, OUTPUT);
+  pinMode(4, OUTPUT);
+  pinMode(2, OUTPUT);
+  pinMode(0, OUTPUT);
   Serial.begin(115200);
   Serial.println();
   Serial.print("Configuring access point...");
   /* You can remove the password parameter if you want the AP to be open. */
   WiFi.softAP(ssid, password);
-
   IPAddress myIP = WiFi.softAPIP();
   Serial.print("AP IP address: ");
   Serial.println(myIP);
@@ -73,10 +117,9 @@ void setup() {
   server.begin();
   Serial.println("HTTP server started");
   WiFi.disconnect();
-  turret.attach(13);
+  turret.attach(14);
 }
 
 void loop() {
   server.handleClient();
-  RotateTurret(90);
 }
