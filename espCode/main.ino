@@ -10,6 +10,7 @@ const char* password = "asirfct2019";
 
 ESP8266WebServer server(8080);
 Servo turret;
+Servo gun;
 
 /* Just a little test message.  Go to http://192.168.4.1 in a web browser
    connected to this access point to see it.
@@ -21,7 +22,8 @@ Servo turret;
 //Motor B
 //Connect INPUT 3 to pin 3 -> GPIO 0
 //Connect INPUT 4 to pin 4 -> GPIO 2
-//Connect servo to pin 5 -> GPIO 14
+//Connect servo turret to pin 5 -> GPIO 14
+//Connect servo gun to pin 6 -> GPIO 12
 void handleRoot() {
   server.send(200, "text/html", "<h1>You are connected</h1>");
 }
@@ -57,6 +59,10 @@ void MoveTank(String dir){
     digitalWrite(5, HIGH);
     digitalWrite(4, LOW);
   default:
+    digitalWrite(2, LOW);
+    digitalWrite(0, LOW);
+    digitalWrite(5, LOW);
+    digitalWrite(4, LOW);
     break;
   }
 }
@@ -91,8 +97,22 @@ void getTankValues() {
   String message = server.arg("plain");
   StaticJsonDocument<200> doc;
   deserializeJson(doc,server message);
-  String direction = doc["dir"];
+  String direction = doc["direction"];
   MoveTank(direction);
+  Serial.println(message);
+  server.send(200, "text/plain","");
+}
+
+void shootState(){
+  String message = server.arg("plain");
+  StaticJsonDocument<200> doc;
+  deserializeJson(doc,server message);
+  String state = doc["state"];
+  if(state == "arming"){
+    gun.write(90);
+  }else {
+    gun.write(0);
+  }
   Serial.println(message);
   server.send(200, "text/plain","");
 }
@@ -114,10 +134,12 @@ void setup() {
   server.on("/", handleRoot);
   server.on("/tank",HTTP_POST, getTankValues);
   server.on("/turret", HTTP_POST , getTurretValues);
+  server.on("/gun", HTTP_POST , shootState);
   server.begin();
   Serial.println("HTTP server started");
   WiFi.disconnect();
   turret.attach(14);
+  gun.attach(12);
 }
 
 void loop() {

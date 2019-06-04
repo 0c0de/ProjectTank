@@ -17,8 +17,6 @@ export default class App extends Component{
     super(props);
 
     this.state = {
-      tankX: 0,
-      tankY: 0,
       turretX: 0,
       turretY: 0,
       armState: 'armed',
@@ -66,10 +64,24 @@ export default class App extends Component{
   }
 
   async setTankPos(position){
-    this.setState({tankX: position.x.toFixed(1), tankY: position.y.toFixed(1)});
+    const x = Math.round(position.x);
+    const y = Math.round(position.y);
+    let dir = '';
+
+    if(x == 0 && y == 1){
+      dir = "forward";
+    }else if(x == 1 && y == 0){
+      dir = "left"
+    }else if(x == -1 && y == 0){
+      dir = "right";
+    }else if(x == 0 && y == -1){
+      dir = "back";
+    }else {
+      dir = ""
+    }
+
     const objToSend = {
-      x: this.state.tankX,
-      y: this.state.tankY
+      direction: dir
     };
 
     const endpointTank = "http://192.168.4.1:8080/tank";
@@ -118,8 +130,21 @@ export default class App extends Component{
     }, 2000);}
     if(this.state.armState === 'armed'){
       this.setState({armState: ''});
-    }    
+    }
+
+    fetch('http://192.168.4.1:8080/gun', {
+      method: 'POST',
+      headers: {
+        'Content-Type':'text/plain'
+      },
+      body: JSON.stringify({state: this.state.armState})
+    }).then((result) => {
+      alert(result);
+    }).catch((err) => {
+      console.warn(err);
+    });    
   }
+  
 }
 
 const styles = StyleSheet.create({
