@@ -8,13 +8,14 @@
 const char* ssid = "ESP-TANK";
 const char* password = "asirfct2019";
 
-ESP8266WebServer server(8080);
+ESP8266WebServer server(80);
 Servo turret;
 Servo gun;
-
+int torretDegrees = 0;
 /* Just a little test message.  Go to http://192.168.4.1 in a web browser
    connected to this access point to see it.
 */
+
 //Motor A
 //Connect INPUT 1 to pin 1 -> GPIO 5
 //Connect INPUT 2 to pin 2 -> GPIO 4
@@ -28,42 +29,45 @@ void handleRoot() {
   server.send(200, "text/html", "<h1>You are connected</h1>");
 }
 
-void RotateTurret(int x){
-  turret.write(x);
+void RotateTurret(String direction){
+  if(direction == "left"){
+    if(torretDegrees > 0) {
+      torretDegrees--;
+    }
+  }else if(direction == "right"){
+    if(torretDegrees < 360){
+      torretDegrees++;
+    }
+  }
+  turret.write(torretDegrees);
 }
 
 void MoveTank(String dir){
-  switch (dir)
-  {
-  case "forward":
+  if(dir == "forward"){
     digitalWrite(5, HIGH);
     digitalWrite(0, HIGH);
     digitalWrite(4, LOW);
     digitalWrite(2, LOW);
-    break;
-  case "back":
+  }else if( dir == "back"){
     digitalWrite(4, HIGH);
     digitalWrite(2, HIGH);
     digitalWrite(0, LOW);
     digitalWrite(5, LOW);
-    break;
-  case "right":
+  }else if(dir == "right"){
     digitalWrite(5, HIGH);
     digitalWrite(4, HIGH);
     digitalWrite(0, HIGH);
     digitalWrite(2, LOW);
-    break;
-  case "left":
+  }else if(dir == "left"){
     digitalWrite(2, HIGH);
     digitalWrite(0, HIGH);
     digitalWrite(5, HIGH);
     digitalWrite(4, LOW);
-  default:
+  }else{
     digitalWrite(2, LOW);
     digitalWrite(0, LOW);
     digitalWrite(5, LOW);
     digitalWrite(4, LOW);
-    break;
   }
 }
 
@@ -96,7 +100,7 @@ void getTurretValues() {
 void getTankValues() {
   String message = server.arg("plain");
   StaticJsonDocument<200> doc;
-  deserializeJson(doc,server message);
+  deserializeJson(doc,message);
   String direction = doc["direction"];
   MoveTank(direction);
   Serial.println(message);
@@ -106,7 +110,7 @@ void getTankValues() {
 void shootState(){
   String message = server.arg("plain");
   StaticJsonDocument<200> doc;
-  deserializeJson(doc,server message);
+  deserializeJson(doc,message);
   String state = doc["state"];
   if(state == "arming"){
     gun.write(90);

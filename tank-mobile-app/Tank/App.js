@@ -7,9 +7,7 @@
  */
 
 import React, {Component} from 'react';
-import {Platform, StyleSheet, Text, View, StatusBar, TouchableOpacity} from 'react-native';
-import AxisPad from 'react-native-axis-pad';
- 
+import {Platform, StyleSheet, Text, View, StatusBar, TouchableOpacity, Image } from 'react-native';
 
 export default class App extends Component{
 
@@ -52,9 +50,33 @@ export default class App extends Component{
       <View style={styles.container}>
         <StatusBar translucent barStyle="light-content" backgroundColor="transparent" />
         <Text style={styles.title}>React Native Tank TFG 2019</Text>
-        <View style={styles.joysticksView}>
-          <AxisPad style={styles.joysticks} size={200} handlerSize={100} resetOnRelease={true} autoCenter={true} onValue={(pos) => this.setTankPos(pos)} />
-          <AxisPad style={styles.joysticks} size={200} handlerSize={100} resetOnRelease={true} autoCenter={true} onValue={(pos) => this.setTurretPos(pos)} />
+        <View style={styles.joystickView}>
+          <View style={styles.LeftJoysticksView}> 
+            <TouchableOpacity style={styles.dirButton} onPressIn={() => this.setTankPos("forward")} onPressOut={() => this.setTankPos("none")}>
+              <Image source={require('./img/Up.png')} style={{width: 100, height: 100}}/>
+            </TouchableOpacity>
+            <View style={styles.LeftRightView}>
+              <TouchableOpacity style={styles.dirButton} onPressIn={() => this.setTankPos("left")} onPressOut={() => this.setTankPos("none")}>
+                <Image source={require('./img/Left.png')} style={{width: 100, height: 100, marginRight: 20}}/>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.dirButton} onPressIn={() => this.setTankPos("right")} onPressOut={() => this.setTankPos("none")}>
+              < Image source={require('./img/Right.png')} style={{width: 100, height: 100, marginLeft: 20}}/>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.dirButton} onPressIn={() => this.setTankPos("back")} onPressOut={() => this.setTankPos("none")}>
+            <Image source={require('./img/Down.png')} style={{width: 100, height: 100}}/>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.RightJoysticksView}>
+            <View style={styles.LeftRightView}>
+              <TouchableOpacity style={styles.dirButton} onPressIn={() => this.setTankPos("left")} onPressOut={() => this.setTankPos("none")}>
+                <Image source={require('./img/Left.png')} style={{width: 100, height: 100}}/>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.dirButton} onPressIn={() => this.setTankPos("right")} onPressOut={() => this.setTankPos("none")}>
+              < Image source={require('./img/Right.png')} style={{width: 100, height: 100}}/>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
         <TouchableOpacity style={styles.button} activeOpacity={0.5} onPress={() => this.shootItem()}>
           <HandleShootState state={this.state.armState} />
@@ -63,28 +85,12 @@ export default class App extends Component{
     );
   }
 
-  async setTankPos(position){
-    const x = Math.round(position.x);
-    const y = Math.round(position.y);
-    let dir = '';
-
-    if(x == 0 && y == 1){
-      dir = "forward";
-    }else if(x == 1 && y == 0){
-      dir = "left"
-    }else if(x == -1 && y == 0){
-      dir = "right";
-    }else if(x == 0 && y == -1){
-      dir = "back";
-    }else {
-      dir = ""
-    }
-
+  async setTankPos(dir){
     const objToSend = {
       direction: dir
     };
 
-    const endpointTank = "http://192.168.4.1:8080/tank";
+    const endpointTank = "http://192.168.4.1/tank";
     await fetch(endpointTank, {
       method: 'POST',
       headers: {
@@ -98,14 +104,12 @@ export default class App extends Component{
     );
   }
 
-  async setTurretPos(position){
-    this.setState({turretX: position.x.toFixed(1), turretY: position.y.toFixed(1)});
+  async setTurretPos(dir){
     const objToSend = {
-      x: this.state.turretX,
-      y: this.state.turretY
+      direction: dir,
     };
 
-    const endpointTurret = "http://192.168.4.1:8080/turret";
+    const endpointTurret = "http://192.168.4.1/turret";
     await fetch(endpointTurret, {
       method: 'POST',
       headers: {
@@ -132,7 +136,7 @@ export default class App extends Component{
       this.setState({armState: ''});
     }
 
-    fetch('http://192.168.4.1:8080/gun', {
+    fetch('http://192.168.4.1/gun', {
       method: 'POST',
       headers: {
         'Content-Type':'text/plain'
@@ -154,8 +158,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#007CD3',
   },
+  dirButton:{
+    //backgroundColor: '#0057d2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    //marginTop: 30,
+    marginBottom: -20,
+  },
+  joystickView: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  LeftRightView: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
   button:{
-    backgroundColor: '#656',
+    backgroundColor: '#0057d2',
     width: '30%',
     marginTop: 30,
     padding: 15,
@@ -165,11 +187,18 @@ const styles = StyleSheet.create({
     color: '#fefefe',
     textAlign: 'center'
   },
-  joysticksView:{
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+  LeftJoysticksView:{
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    width: '100%',
+    width: '50%',
+    flexWrap: 'wrap',
+  },
+  RightJoysticksView:{
+    flexDirection: 'column',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    width: '50%',
     flexWrap: 'wrap',
   },
   title: {
